@@ -10,22 +10,43 @@ import {SIG_VALIDATION_FAILED, SIG_VALIDATION_SUCCESS} from "lib/account-abstrac
 import {IEntryPoint} from "lib/account-abstraction/contracts/interfaces/IEntryPoint.sol";
 
 contract MinimalAccount is IAccount, Ownable {
+    // ERRORS
     error MinimalAccount__NotFromEntryPoint();
+    error MinimalAccount__NotFromEntryPointOrOwner();
+    error MinimalAccount__CallFailed(bytes);
 
+    // STATE VARIABLES 
     IEntryPoint private immutable i_entryPoint;
 
-    constructor(address entryPoint) Ownable(msg.sender) {
-        i_entryPoint = IEntryPoint(entryPoint);
-    }
-
-    modifier requireFromEntryPoint{
+    // MODIFIERS
+    modifier requireFromEntryPoint () {
         if(msg.sender != address(i_entryPoint)){
             revert MinimalAccount__NotFromEntryPoint();
         }
         _;
     }
 
+    modifier requireFromEntryPointOrOwner() {
+        if(msg.sender != address(i_entryPoint)){
+            revert MinimalAccount__NotFromEntryPointOrOwner();
+        }
+        _;
+    }
+
+    // FUNCTIONS
+    constructor(address entryPoint) Ownable(msg.sender) {
+        i_entryPoint = IEntryPoint(entryPoint);
+    }
+
+    receive() external payable {}
+
     // EXTERNAL FUNCTIONS
+    function execute(address dest, uint256 value, bytes calldata functionData) external requireFromEntryPoint {
+        (bool success, bytes memory result) = dest.call{value: value}(functionData);
+        if(!success){
+            revert MinimalAccount__CallFailed(result);
+        }
+    }
 
     // an account is valid if its the MinimalAccount owner
     function validateUserOp(
