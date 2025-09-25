@@ -25,6 +25,8 @@ contract MinimalAccount is IAccount, Ownable {
         _;
     }
 
+    // EXTERNAL FUNCTIONS
+
     // an account is valid if its the MinimalAccount owner
     function validateUserOp(
         PackedUserOperation calldata userOp,
@@ -35,6 +37,8 @@ contract MinimalAccount is IAccount, Ownable {
         // _validateNonce()
         _payPrefund(missingAccountFunds);
     }
+
+    // INTERNAL FUNCTIONS
 
     // EIP-191 version of the signed hash
     // Optionally signature aggregator for more customization
