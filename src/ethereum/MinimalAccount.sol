@@ -16,18 +16,18 @@ contract MinimalAccount is IAccount, Ownable {
     error MinimalAccount__CallFailed(bytes);
 
     // STATE VARIABLES 
-    IEntryPoint private immutable i_entryPoint;
+    IEntryPoint private immutable I_ENTRYPOINT;
 
     // MODIFIERS
     modifier requireFromEntryPoint () {
-        if(msg.sender != address(i_entryPoint)){
+        if(msg.sender != address(I_ENTRYPOINT)){
             revert MinimalAccount__NotFromEntryPoint();
         }
         _;
     }
 
     modifier requireFromEntryPointOrOwner() {
-        if(msg.sender != address(i_entryPoint)){
+        if(msg.sender != address(I_ENTRYPOINT)){
             revert MinimalAccount__NotFromEntryPointOrOwner();
         }
         _;
@@ -35,13 +35,13 @@ contract MinimalAccount is IAccount, Ownable {
 
     // FUNCTIONS
     constructor(address entryPoint) Ownable(msg.sender) {
-        i_entryPoint = IEntryPoint(entryPoint);
+        I_ENTRYPOINT = IEntryPoint(entryPoint);
     }
 
     receive() external payable {}
 
     // EXTERNAL FUNCTIONS
-    function execute(address dest, uint256 value, bytes calldata functionData) external requireFromEntryPoint {
+    function execute(address dest, uint256 value, bytes calldata functionData) external requireFromEntryPointOrOwner {
         (bool success, bytes memory result) = dest.call{value: value}(functionData);
         if(!success){
             revert MinimalAccount__CallFailed(result);
@@ -82,6 +82,6 @@ contract MinimalAccount is IAccount, Ownable {
 
     // Getters
     function getEntryPoint() external view returns (address){
-        return address(i_entryPoint);
+        return address(I_ENTRYPOINT);
     }
 }
