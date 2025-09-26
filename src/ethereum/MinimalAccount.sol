@@ -27,7 +27,7 @@ contract MinimalAccount is IAccount, Ownable {
     }
 
     modifier requireFromEntryPointOrOwner() {
-        if(msg.sender != address(I_ENTRYPOINT)){
+        if(msg.sender != address(I_ENTRYPOINT) && msg.sender != owner()){
             revert MinimalAccount__NotFromEntryPointOrOwner();
         }
         _;

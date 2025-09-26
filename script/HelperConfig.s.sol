@@ -8,14 +8,15 @@ contract HelperConfig is Script {
 
     struct NetworkConfig{
         address entryPoint;
-        address account
+        address account;
     }
 
     uint256 constant ETH_SEPOLIA_CHAIN_ID = 11155111;
     uint256 constant ZKSYNC_SEPOLIA_CHAIN_ID = 300;
     uint256 constant LOCAL_CHAIN_ID = 31337;
-    address constant BURNER_WALLET = ;
-
+    address constant BURNER_WALLET = 0x50CB0Fcc23c6582Efd752e5eA728F2058c206c17;
+    address constant FOUNDRY_DEFAULT_WALLET = 0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38;
+    
     NetworkConfig public localNetworkConfig;
     mapping(uint256 chainId => NetworkConfig) public networkConfigs;
 
@@ -23,11 +24,11 @@ contract HelperConfig is Script {
         networkConfigs[ETH_SEPOLIA_CHAIN_ID] = getEthNetworkConfig();
     }
 
-    function getConfig() public returns (NetworkConfig memory) {
+    function getConfig() public view returns (NetworkConfig memory) {
         return getConfigByChainId(block.chainid);
     }
 
-    function getConfigByChainId(uint256 chainId) public returns(NetworkConfig memory) {
+    function getConfigByChainId(uint256 chainId) public view returns(NetworkConfig memory) {
         if(chainId == LOCAL_CHAIN_ID){
             return getOrCreateAnvilNetworkConfig();
         } else if(networkConfigs[chainId].account != address(0)){
@@ -45,11 +46,13 @@ contract HelperConfig is Script {
         return NetworkConfig({entryPoint: address(0), account: BURNER_WALLET});
     }
 
-    function getOrCreateAnvilNetworkConfig() public returns (NetworkConfig memory){
+    function getOrCreateAnvilNetworkConfig() public view returns (NetworkConfig memory){
         if(localNetworkConfig.account != address(0)){
             return localNetworkConfig;
         }
 
-        // deploy mock entrypoint 
+        // deploy mocks
+
+        return NetworkConfig({entryPoint: address(0), account: FOUNDRY_DEFAULT_WALLET});
     }
 }
