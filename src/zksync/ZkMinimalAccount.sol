@@ -8,8 +8,11 @@ import {
 } from "lib/foundry-era-contracts/src/system-contracts/contracts/libraries/MemoryTransactionHelper.sol";
 import {SystemContractsCaller} from
     "lib/foundry-era-contracts/src/system-contracts/contracts/libraries/SystemContractsCaller.sol";
-import {NONCE_HOLDER_SYSTEM_CONTRACT} from "lib/foundry-era-contracts/src/system-contracts/contracts/Constants.sol";
+import {NONCE_HOLDER_SYSTEM_CONTRACT, BOOTLOADER_FORMAL_ADDRESS} from "lib/foundry-era-contracts/src/system-contracts/contracts/Constants.sol";
 import {INonceHolder} from "lib/foundry-era-contracts/src/system-contracts/contracts/interfaces/INonceHolder.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {MessageUtils} from "@openzeppelin/contracts/utils/cryptography/MessageUtils.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 /**
  * Life cycle of a type-113 (0x71) transaction.
@@ -29,10 +32,23 @@ import {INonceHolder} from "lib/foundry-era-contracts/src/system-contracts/contr
  * 9. If a paymaster was used, the postTransaction is called
  *
  */
-contract ZkMinimalAccount is IAccount {
+contract ZkMinimalAccount is IAccount, Ownable {
     using MemoryTransactionHelper for Transaction;
 
+    // Errors
     error ZkMinimalAccount__NotEnoughBalance();
+    error ZkMinimalAccount__NotFromBootLoader();
+
+    // Modifiers
+    modifier requireFromBootLoader {
+        if(msg.sender != BOOTLOADER_FORMAL_ADDRESS){
+            revert ZkMinimalAccount__NotFromBootLoader();
+        }
+        _;
+    }
+
+    // Functions
+    constructor Ownable(msg.sender) {}
 
     // External Functions
     /**
@@ -43,6 +59,7 @@ contract ZkMinimalAccount is IAccount {
     function validateTransaction(bytes32 _txHash, bytes32 _suggestedSignedHash, Transaction memory _transaction)
         external
         payable
+        requireFromBootLoader
         returns (bytes4 magic)
     {
         // call nonce holder
@@ -61,8 +78,18 @@ contract ZkMinimalAccount is IAccount {
         }
 
         // check for signature
+        bytes32 txHash = _transaction.encodeHash(); // encode our transaction hash
+        bytes32 convertedHash = MessageUtils.toEthSignedMessageHash(txHash); // convert hash to proper format
+        address signer = ECDSA.recover(convertedHash, _transaction.signature); // check who signed the hash
+        bool isValidSIgner = signer == address(owner())
+        if (isValidSIgner) {
+            magic = ACCOUNT_VALIDATION_SUCCESS_MAGIC;
+        } else {
+            magic = bytes4(0);
+        }
 
         // return the magic number
+        return magic;
     }
 
     function executeTransaction(bytes32 _txHash, bytes32 _suggestedSignedHash, Transaction memory _transaction)
