@@ -132,6 +132,7 @@ contract ZkMinimalAccount is IAccount, Ownable {
 
         // check for signature
         bytes32 txHash = _transaction.encodeHash(); // encode our transaction hash
+        // Future rf: no need for the MessageHashUtils already put into correct format by the MessageTransactionHelper
         bytes32 convertedHash = MessageHashUtils.toEthSignedMessageHash(txHash); // convert hash to proper format
         address signer = ECDSA.recover(convertedHash, _transaction.signature); // check who signed the hash
         bool isValidSIgner = signer == address(owner());
