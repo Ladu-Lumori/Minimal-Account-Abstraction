@@ -86,7 +86,7 @@ contract ZkMinimalAccountTest is Test {
     // Helper Functions
     function _signTransaction(Transaction memory transaction) internal view returns (Transaction memory) {
         bytes32 unsignedTransactionHash = MemoryTransactionHelper.encodeHash(transaction);
-        // Future rf: no need for the MessageHashUtils already put into correct format by the MessageTransactionHelper
+        // Future rf: no need for the toEthSignedMessageHash, encodeHash already returns the required format
         bytes32 digest = unsignedTransactionHash.toEthSignedMessageHash();
         uint8 v;
         bytes32 r;
